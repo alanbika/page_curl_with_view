@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<fi.harism.curl.CurlLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+    <Button android:text="@string/hello_world" android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"/>
+    <Button android:text="@string/hello_world" android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|bottom"/>
+</fi.harism.curl.CurlLayout>
+<!-- From: file:/D:/code%20qin/android_page_curl-master1/app/src/main/res/layout/activity_my_curl.xml -->
