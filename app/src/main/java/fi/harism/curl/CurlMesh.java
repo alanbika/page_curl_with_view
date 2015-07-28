@@ -16,6 +16,10 @@
 
 package fi.harism.curl;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -27,6 +31,8 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.opengl.GLUtils;
+import android.os.Environment;
+import android.util.Log;
 
 /**
  * Class implementing actual curl/page rendering.
@@ -99,6 +105,7 @@ public class CurlMesh {
 
 	private int mVerticesCountBack;
 	private int mVerticesCountFront;
+	private Bitmap mPreviewBitmap = null;
 
 	/**
 	 * Constructor for mesh object.
@@ -621,12 +628,14 @@ public class CurlMesh {
 		}
 
 		if (DRAW_TEXTURE && mTexturePage.getTexturesChanged()) {
+			//要显示的下一张
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[0]);
 			Bitmap texture = mTexturePage.getTexture(mTextureRectFront,
 					CurlPage.SIDE_FRONT);
+			Log.e("bimapsize", "" + texture.getByteCount());
+			setPreviewBitmap(texture);
 			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
 			texture.recycle();
-
 			mTextureBack = mTexturePage.hasBackTexture();
 			if (mTextureBack) {
 				gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[1]);
@@ -637,7 +646,6 @@ public class CurlMesh {
 			} else {
 				mTextureRectBack.set(mTextureRectFront);
 			}
-
 			mTexturePage.recycle();
 			reset();
 		}
@@ -973,5 +981,15 @@ public class CurlMesh {
 			mPosX += dx;
 			mPosY += dy;
 		}
+
+	}
+	private void setPreviewBitmap(Bitmap texture){
+		if(mPreviewBitmap!=null){
+			mPreviewBitmap.recycle();
+		}
+		mPreviewBitmap = texture.copy(Bitmap.Config.RGB_565,true);
+	}
+	public Bitmap getPreviewBitmap(){
+		return mPreviewBitmap;
 	}
 }

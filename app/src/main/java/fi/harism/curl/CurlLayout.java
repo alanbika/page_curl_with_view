@@ -122,8 +122,9 @@ public class CurlLayout extends FrameLayout {
                 // Second case is image on back side, solid colored front.
                 case 1: {
                     Bitmap back = loadBitmap(width, height, 2);
-                    page.setTexture(back, CurlPage.SIDE_BACK);
-                    page.setColor(Color.rgb(127, 140, 180), CurlPage.SIDE_FRONT);
+                    page.setTexture(back, CurlPage.SIDE_FRONT);
+                    //page.setColor(Color.rgb(127, 140, 180), CurlPage.SIDE_FRONT);
+                    page.setColor(Color.rgb(180, 180, 180), CurlPage.SIDE_BACK);
                     break;
                 }
                 // Third case is images on both sides.

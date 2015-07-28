@@ -20,6 +20,13 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.RectF;
+import android.os.Environment;
+import android.util.Log;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Storage class for page textures, blend colors and possibly some other values
@@ -97,7 +104,6 @@ public class CurlPage {
 		float texX = (float) w / newW;
 		float texY = (float) h / newH;
 		textureRect.set(0f, 0f, texX, texY);
-
 		return bitmapTex;
 	}
 
@@ -111,6 +117,7 @@ public class CurlPage {
 		switch (side) {
 		case SIDE_FRONT:
 			return getTexture(mTextureFront, textureRect);
+
 		default:
 			return getTexture(mTextureBack, textureRect);
 		}

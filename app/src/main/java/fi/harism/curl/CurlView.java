@@ -18,14 +18,23 @@ package fi.harism.curl;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLSurfaceView;
+import android.os.Environment;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -93,7 +102,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	// One page is the default.
 	private int mViewMode = SHOW_ONE_PAGE;
 	// add by TongQin
-	private ArrayList<View> bindView = new ArrayList<View>();
+	private ArrayList<View> mBindViews = new ArrayList<View>();
 	private FrameLayout parentLayout;
 	/**
 	 * Default constructor.
@@ -151,6 +160,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 
 	@Override
 	public void onDrawFrame() {
+		//Log.e("draw","1");
 		// We are not animating.
 		if (mAnimate == false) {
 			return;
@@ -174,6 +184,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 					--mCurrentIndex;
 				}
 			} else if (mAnimationTargetEvent == SET_CURL_TO_LEFT) {
+				//Log.e("draw","2");
 				// Switch curled page to left.
 				CurlMesh left = mPageCurl;
 				CurlMesh curl = mPageLeft;
@@ -536,6 +547,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	 * pages in landscape
 	 */
 	private void startCurl(int page) {
+		Log.e("curl", "start");
 		switch (page) {
 
 		// Once right side page is curled, first right page is assigned into
@@ -561,6 +573,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 					mRenderer.addCurlMesh(mPageLeft);
 				}
 			}
+
 			if (mCurrentIndex < mPageProvider.getPageCount() - 1) {
 				updatePage(mPageRight.getTexturePage(), mCurrentIndex + 1);
 				mPageRight.setRect(mRenderer
@@ -572,7 +585,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 
 			// Add curled page to renderer.
 			mPageCurl.setRect(mRenderer.getPageRect(CurlRenderer.PAGE_RIGHT));
-			drawViewtoBitmap(mPageCurl);
+			drawViewtoBitmap();
 			mPageCurl.setFlipTexture(false);
 			mPageCurl.reset();
 			mRenderer.addCurlMesh(mPageCurl);
@@ -640,7 +653,6 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	 * Updates curl position.
 	 */
 	private void updateCurlPos(PointerPosition pointerPos) {
-
 		// Default curl radius.
 		double radius = mRenderer.getPageRect(CURL_RIGHT).width() / 3;
 		// TODO: This is not an optimal solution. Based on feedback received so
@@ -726,6 +738,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	 * Updates bitmaps for page meshes.
 	 */
 	private void updatePages() {
+		Log.e("curl", "updatePages");
 		if (mPageProvider == null || mPageBitmapWidth <= 0
 				|| mPageBitmapHeight <= 0) {
 			return;
@@ -824,15 +837,46 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 		public void onSizeChanged(int width, int height);
 	}
 	public void setbindView(ArrayList<View> viewList){
-		bindView = viewList;
+		mBindViews = viewList;
 	}
 	public void setParentLayout(FrameLayout parentLayout) {
 		this.parentLayout = parentLayout;
 	}
-	private void drawViewtoBitmap(CurlMesh mPageCurl){
+	private void drawViewtoBitmap(){
 		Bitmap backGround = parentLayout.getDrawingCache();
-		mPageCurl.getTexturePage().setTexture(backGround,CurlPage.SIDE_FRONT);
-		Iterator<View> it = bindView.iterator();
+		//mPageCurl.getTexturePage().setTexture(backGround,CurlPage.SIDE_FRONT);
+
+		Bitmap bmp = Bitmap.createBitmap(backGround.getWidth(),backGround.getHeight(),backGround.getConfig());
+		Bitmap newBitmap = Bitmap.createBitmap(mPageCurl.getPreviewBitmap(),0,0,backGround.getWidth(),backGround.getHeight());
+		Log.e("curl width",""+mPageCurl.getPreviewBitmap().getWidth());
+		Log.e("curl heigth",""+mPageCurl.getPreviewBitmap().getHeight());
+		Log.e("back width",""+backGround.getWidth());
+		Log.e("back HEIGHT",""+backGround.getHeight());
+		Log.e("newBitmap width",""+newBitmap.getWidth());
+		RectF rectF = new RectF(0,0,backGround.getWidth(),backGround.getHeight());
+
+		Canvas canvas = new Canvas(newBitmap);
+		//canvas.drawBitmap(Bitmap.createScaledBitmap(mPageCurl.getPreviewBitmap(), backGround.getWidth(), backGround.getHeight(),true), null, rectF, null);
+		canvas.drawBitmap(backGround, null, rectF, null);
+		//this.draw(canvas);
+		mPageCurl.getTexturePage().setTexture(newBitmap, CurlPage.SIDE_FRONT);
+		setViewsInvisible();
+		/*File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+		File pic = new File(path,"tem21221.jpg");
+
+		BufferedOutputStream bos = null;
+		try {
+			bos = new BufferedOutputStream(new FileOutputStream(pic));
+			newBitmap.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+			bos.flush();
+			bos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}*/
+
+	}
+	private void setViewsInvisible(){
+		Iterator<View> it = mBindViews.iterator();
 		while(it.hasNext()){
 			View v = it.next();
 			if(v!=this)
