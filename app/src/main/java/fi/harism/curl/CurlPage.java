@@ -22,6 +22,7 @@ import android.graphics.Color;
 import android.graphics.RectF;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.FrameLayout;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -45,7 +46,8 @@ public class CurlPage {
 	private Bitmap mTextureBack;
 	private Bitmap mTextureFront;
 	private boolean mTexturesChanged;
-
+	private Bitmap mTextureFrontWithViews;
+	private Bitmap mTextureFrontWithoutViews;
 	/**
 	 * Default constructor.
 	 */
@@ -93,13 +95,29 @@ public class CurlPage {
 		// be power of two.
 		int newW = getNextHighestPO2(w);
 		int newH = getNextHighestPO2(h);
-
 		// TODO: Is there another way to create a bigger Bitmap and copy
 		// original Bitmap to it more efficiently? Immutable bitmap anyone?
 		Bitmap bitmapTex = Bitmap.createBitmap(newW, newH, bitmap.getConfig());
 		Canvas c = new Canvas(bitmapTex);
 		c.drawBitmap(bitmap, 0, 0, null);
+		/*if (parentLayoutBmp!=null){
+			Log.e("~~~~~~~~~~","~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+			File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+			File pic = new File(path,"tem15210.jpg");
 
+			BufferedOutputStream bos = null;
+			try {
+				bos = new BufferedOutputStream(new FileOutputStream(pic));
+				parentLayoutBmp.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+				bos.flush();
+				bos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+			c.drawBitmap(parentLayoutBmp , 0, 0, null);
+
+		}*/
 		// Calculate final texture coordinates.
 		float texX = (float) w / newW;
 		float texY = (float) h / newH;
@@ -212,7 +230,50 @@ public class CurlPage {
 			mTextureFront = mTextureBack = texture;
 			break;
 		}
+		mTextureFrontWithoutViews = mTextureFront;
 		mTexturesChanged = true;
 	}
+	public void changeWithViews(Bitmap parentLayoutBmp) {
+		if (mTextureFrontWithViews == null){
 
+			mTextureFrontWithViews = mTextureFrontWithoutViews.copy(Bitmap.Config.RGB_565, true);
+			Canvas c = new Canvas(mTextureFrontWithViews);
+			c.drawBitmap(parentLayoutBmp , 0, 0, null);
+ 			File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+			File pic = new File(path,"mTextureFrontWithViews.jpg");
+
+			BufferedOutputStream bos = null;
+			try {
+				bos = new BufferedOutputStream(new FileOutputStream(pic));
+				mTextureFrontWithViews.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+				bos.flush();
+				bos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+		mTextureFront = mTextureFrontWithViews.copy(Bitmap.Config.RGB_565,true);
+		mTexturesChanged = true;
+	}
+	public void changeWithoutViews() {
+
+		mTextureFront = mTextureFrontWithoutViews.copy(Bitmap.Config.RGB_565,true);
+		mTexturesChanged = true;
+	}
+	public void setmTextureFrontWithoutViews(){
+		mTextureFrontWithoutViews = mTextureFront.copy(Bitmap.Config.RGB_565,true);
+		/*File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+		File pic = new File(path,"10.jpg");
+
+		BufferedOutputStream bos = null;
+		try {
+			bos = new BufferedOutputStream(new FileOutputStream(pic));
+			mTextureFrontWithoutViews.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+			bos.flush();
+			bos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}*/
+	}
 }

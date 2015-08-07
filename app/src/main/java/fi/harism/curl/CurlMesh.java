@@ -33,6 +33,7 @@ import android.graphics.RectF;
 import android.opengl.GLUtils;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.FrameLayout;
 
 /**
  * Class implementing actual curl/page rendering.
@@ -106,6 +107,7 @@ public class CurlMesh {
 	private int mVerticesCountBack;
 	private int mVerticesCountFront;
 	private Bitmap mPreviewBitmap = null;
+
 
 	/**
 	 * Constructor for mesh object.
@@ -609,6 +611,7 @@ public class CurlMesh {
 	 */
 	public synchronized void onDrawFrame(GL10 gl) {
 		// First allocate texture if there is not one yet.
+
 		if (DRAW_TEXTURE && mTextureIds == null) {
 			// Generate texture.
 			mTextureIds = new int[2];
@@ -628,12 +631,24 @@ public class CurlMesh {
 		}
 
 		if (DRAW_TEXTURE && mTexturePage.getTexturesChanged()) {
-			//要显示的下一张
+			Log.e("1MeshId",this.hashCode()+"");
 			gl.glBindTexture(GL10.GL_TEXTURE_2D, mTextureIds[0]);
 			Bitmap texture = mTexturePage.getTexture(mTextureRectFront,
 					CurlPage.SIDE_FRONT);
-			Log.e("bimapsize", "" + texture.getByteCount());
-			setPreviewBitmap(texture);
+			//Log.e("bimapsize", "" + texture.getByteCount());
+			/*File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+			File pic = new File(path,this.hashCode()+".jpg");
+
+			BufferedOutputStream bos = null;
+			try {
+				bos = new BufferedOutputStream(new FileOutputStream(pic));
+				texture.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+				bos.flush();
+				bos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}*/
+			//setPreviewBitmap(texture);
 			GLUtils.texImage2D(GL10.GL_TEXTURE_2D, 0, texture, 0);
 			texture.recycle();
 			mTextureBack = mTexturePage.hasBackTexture();
@@ -849,6 +864,8 @@ public class CurlMesh {
 		mRectangle[3].mTexX = right;
 		mRectangle[3].mTexY = bottom;
 	}
+
+
 
 	/**
 	 * Simple fixed size array implementation.

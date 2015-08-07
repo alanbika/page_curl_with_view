@@ -26,6 +26,8 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLU;
+import android.os.Message;
+import android.util.Log;
 
 /**
  * Actual renderer class.
@@ -105,10 +107,11 @@ public class CurlRenderer implements GLSurfaceView.Renderer {
 		if (USE_PERSPECTIVE_PROJECTION) {
 			gl.glTranslatef(0, 0, -6f);
 		}
-
 		for (int i = 0; i < mCurlMeshes.size(); ++i) {
 			mCurlMeshes.get(i).onDrawFrame(gl);
+
 		}
+		mObserver.onSetViewInvisible();
 	}
 
 	@Override
@@ -262,5 +265,7 @@ public class CurlRenderer implements GLSurfaceView.Renderer {
 		 * what needs to be done when this happens.
 		 */
 		public void onSurfaceCreated();
+
+		public void onSetViewInvisible();
 	}
 }

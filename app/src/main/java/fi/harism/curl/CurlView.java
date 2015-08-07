@@ -24,6 +24,9 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.opengl.GLSurfaceView;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -59,9 +62,11 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	public static final int SHOW_ONE_PAGE = 1;
 	// Shows two pages side by side.
 	public static final int SHOW_TWO_PAGES = 2;
+	public static final int SET_VISIBLE = 1;
+	public static final int SET_INVISIBLE = 2;
 
 	private boolean mAllowLastPageCurl = true;
-
+	private boolean firstCurl = false;
 	private boolean mAnimate = false;
 	private long mAnimationDurationTime = 300;
 	private PointF mAnimationSource = new PointF();
@@ -104,6 +109,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	// add by TongQin
 	private ArrayList<View> mBindViews = new ArrayList<View>();
 	private FrameLayout parentLayout;
+	MyHandler mHandler;
 	/**
 	 * Default constructor.
 	 */
@@ -143,6 +149,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	 * Initialize method.
 	 */
 	private void init(Context ctx) {
+		mHandler = new MyHandler();
 		mRenderer = new CurlRenderer(this);
 		setRenderer(mRenderer);
 		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -160,17 +167,17 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 
 	@Override
 	public void onDrawFrame() {
-		//Log.e("draw","1");
 		// We are not animating.
 		if (mAnimate == false) {
 			return;
 		}
 
 		long currentTime = System.currentTimeMillis();
-		// If animation is done.
+		// If animation is done.手指抬起后翻完页
 		if (currentTime >= mAnimationStartTime + mAnimationDurationTime) {
 			if (mAnimationTargetEvent == SET_CURL_TO_RIGHT) {
 				// Switch mAnimationTargetEvent page to right.
+				//Log.e("draw","1111");
 				CurlMesh right = mPageCurl;
 				CurlMesh curl = mPageRight;
 				right.setRect(mRenderer.getPageRect(CurlRenderer.PAGE_RIGHT));
@@ -184,7 +191,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 					--mCurrentIndex;
 				}
 			} else if (mAnimationTargetEvent == SET_CURL_TO_LEFT) {
-				//Log.e("draw","2");
+				//Log.e("draw","22222");
 				// Switch curled page to left.
 				CurlMesh left = mPageCurl;
 				CurlMesh curl = mPageLeft;
@@ -202,6 +209,11 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 					++mCurrentIndex;
 				}
 			}
+			mPageRight.getTexturePage().changeWithoutViews();
+			//setViewsVisible();
+			Message msg = mHandler.obtainMessage();
+			msg.what = SET_VISIBLE;
+			mHandler.sendMessage(msg);
 			mCurlState = CURL_NONE;
 			mAnimate = false;
 			requestRender();
@@ -212,6 +224,16 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 			mPointerPos.mPos.x += (mAnimationTarget.x - mAnimationSource.x) * t;
 			mPointerPos.mPos.y += (mAnimationTarget.y - mAnimationSource.y) * t;
 			updateCurlPos(mPointerPos);
+		}
+
+	}
+	@Override
+	public void onSetViewInvisible(){
+		if(firstCurl){
+			Message msg = mHandler.obtainMessage();
+			msg.what = SET_INVISIBLE;
+			mHandler.sendMessage(msg);
+			firstCurl = false;
 		}
 	}
 
@@ -322,6 +344,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 			if (mCurlState == CURL_NONE) {
 				return false;
 			}
+			requestRender();
 		}
 		case MotionEvent.ACTION_MOVE: {
 			updateCurlPos(mPointerPos);
@@ -578,16 +601,23 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 				updatePage(mPageRight.getTexturePage(), mCurrentIndex + 1);
 				mPageRight.setRect(mRenderer
 						.getPageRect(CurlRenderer.PAGE_RIGHT));
+				mPageRight.getTexturePage().changeWithViews(parentLayout.getDrawingCache());
+				//mPageRight.getTexturePage().setParentLayout(parentLayout);
 				mPageRight.setFlipTexture(false);
 				mPageRight.reset();
 				mRenderer.addCurlMesh(mPageRight);
 			}
-
+			Log.e("mPageCurl", mPageCurl.hashCode() + "");
+			Log.e("mPageRight", mPageRight.hashCode() + "");
+			Log.e("mPageLeft", mPageLeft.hashCode() + "");
 			// Add curled page to renderer.
 			mPageCurl.setRect(mRenderer.getPageRect(CurlRenderer.PAGE_RIGHT));
-			drawViewtoBitmap();
+			//drawViewtoBitmap();
+			mPageCurl.getTexturePage().changeWithViews(parentLayout.getDrawingCache());
 			mPageCurl.setFlipTexture(false);
 			mPageCurl.reset();
+			firstCurl = true;
+			//setViewsInvisible();
 			mRenderer.addCurlMesh(mPageCurl);
 
 			mCurlState = CURL_RIGHT;
@@ -624,6 +654,7 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 				mPageRight.setFlipTexture(false);
 				mPageRight.setRect(mRenderer
 						.getPageRect(CurlRenderer.PAGE_RIGHT));
+				mPageRight.getTexturePage().changeWithViews(parentLayout.getDrawingCache());
 				mPageRight.reset();
 				mRenderer.addCurlMesh(mPageRight);
 			}
@@ -639,7 +670,10 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 						.setRect(mRenderer.getPageRect(CurlRenderer.PAGE_LEFT));
 				mPageCurl.setFlipTexture(true);
 			}
+			mPageCurl.getTexturePage().changeWithViews(parentLayout.getDrawingCache());
 			mPageCurl.reset();
+			firstCurl = true;
+			//setViewsInvisible();
 			mRenderer.addCurlMesh(mPageCurl);
 
 			mCurlState = CURL_LEFT;
@@ -728,10 +762,13 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	 */
 	private void updatePage(CurlPage page, int index) {
 		// First reset page to initial state.
+		//Log.e("update","inggggg");
+
 		page.reset();
 		// Ask page provider to fill it up with bitmaps and colors.
 		mPageProvider.updatePage(page, mPageBitmapWidth, mPageBitmapHeight,
 				index);
+		page.setmTextureFrontWithoutViews();
 	}
 
 	/**
@@ -845,22 +882,15 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 	private void drawViewtoBitmap(){
 		Bitmap backGround = parentLayout.getDrawingCache();
 		//mPageCurl.getTexturePage().setTexture(backGround,CurlPage.SIDE_FRONT);
-
 		Bitmap bmp = Bitmap.createBitmap(backGround.getWidth(),backGround.getHeight(),backGround.getConfig());
 		Bitmap newBitmap = Bitmap.createBitmap(mPageCurl.getPreviewBitmap(),0,0,backGround.getWidth(),backGround.getHeight());
-		Log.e("curl width",""+mPageCurl.getPreviewBitmap().getWidth());
-		Log.e("curl heigth",""+mPageCurl.getPreviewBitmap().getHeight());
-		Log.e("back width",""+backGround.getWidth());
-		Log.e("back HEIGHT",""+backGround.getHeight());
-		Log.e("newBitmap width",""+newBitmap.getWidth());
 		RectF rectF = new RectF(0,0,backGround.getWidth(),backGround.getHeight());
-
 		Canvas canvas = new Canvas(newBitmap);
 		//canvas.drawBitmap(Bitmap.createScaledBitmap(mPageCurl.getPreviewBitmap(), backGround.getWidth(), backGround.getHeight(),true), null, rectF, null);
 		canvas.drawBitmap(backGround, null, rectF, null);
 		//this.draw(canvas);
 		mPageCurl.getTexturePage().setTexture(newBitmap, CurlPage.SIDE_FRONT);
-		setViewsInvisible();
+		//setViewsInvisible();
 		/*File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
 		File pic = new File(path,"tem21221.jpg");
 
@@ -876,11 +906,44 @@ public class CurlView extends GLSurfaceView implements View.OnTouchListener,
 
 	}
 	private void setViewsInvisible(){
+		//mPageRight.getTexturePage().setParentLayout(parentLayout.getDrawingCache());
+		//mPageCurl.getTexturePage().setParentLayout(parentLayout.getDrawingCache());
 		Iterator<View> it = mBindViews.iterator();
 		while(it.hasNext()){
 			View v = it.next();
 			if(v!=this)
 				v.setVisibility(INVISIBLE);
+		}
+	}
+	private void setViewsVisible(){
+		//mPageRight.getTexturePage().setParentLayout(parentLayout.getDrawingCache());
+		//mPageCurl.getTexturePage().setParentLayout(parentLayout.getDrawingCache());
+		Iterator<View> it = mBindViews.iterator();
+		while(it.hasNext()){
+			View v = it.next();
+			if(v!=this)
+				v.setVisibility(VISIBLE);
+		}
+	}
+	class MyHandler extends Handler {
+		public MyHandler() {
+		}
+
+		public MyHandler(Looper L) {
+			super(L);
+		}
+		@Override
+		public void handleMessage(Message msg) {
+			// TODO Auto-generated method stub
+			switch (msg.what){
+				case SET_VISIBLE:
+					setViewsVisible();
+					break;
+				case SET_INVISIBLE:
+					setViewsInvisible();
+					break;
+			}
+
 		}
 	}
 }
